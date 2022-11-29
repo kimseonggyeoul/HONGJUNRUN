@@ -617,11 +617,10 @@ public class GamePanel extends JPanel {
 					}
 					if (e.getKeyCode() == KeyEvent.VK_DOWN) { // 슬라이드 할 때
 						downKeyOn = true; // 슬라이드 여부 = true
-
-						if (c1.getImage() != slideIc.getImage() // 슬라이드가 아니고
-								&& !c1.isJump() // 점프가 아니며
-								&& !c1.isFall()) { // 낙하 중도 아닐 때
-							c1.setImage(slideIc.getImage()); // 슬라이드 변경
+		                  		if ((c1.getImage() == slideIc.getImage()|| c1.getImage() == cookieIc.getImage()) // 쿠키이미지가 슬라이드 이미지가 아니고 기본이미지가 아니며
+		                          		&& !c1.isJump() // 점프 중이 아니며
+		                          		&& !c1.isFall()) { // 낙하 중도 아닐 때
+		                       			c1.setImage(slideIc.getImage()); // 이미지를 슬라이드이미지로 변경
 
 						}
 					}
@@ -1130,95 +1129,60 @@ public class GamePanel extends JPanel {
 			}
 		}).start();
 	}
+	   // 낙하 메서드
+	   private void fall() {
+	   new Thread(new Runnable() {
 
-	// 낙하 메서드
-	private void fall() {
-		new Thread(new Runnable() {
+	      @Override
+	      public void run() { 
+	        while (true) {
+	          if (c1.getY() < nowField && !c1.isJump() && !c1.isFall()) { // 공중에있으며, 점프, 떨어지는 상태가 아닐때  ++ 슬라이드 기능일때 못하게
+	            if (c1.getCountJump() == 2) { // 더블점프가 끝났을 경우 낙하 이미지로 변경 , jumpcount==1을 하지않는 이유는 점프와 떨어지는 이미지가 같기때문  
+	               c1.setImage(fallIc.getImage());
+	            }
+	            long t1 = Util.getTime(); // 현재시간을 가져온다
+	            long t2;
+	         while (foot < nowField) { // 발이 발판에 닿기 전까지 반복
 
-			@Override
-			public void run() {
-				while (true) {
+	               t2 = Util.getTime() - t1; // t2- 현재 t2는 while문으로 인해 계속증가 
+	               int fallY =1+(int) ((t2) / 40); // t2를 증가 시키며 t2
+	               foot = c1.getY() + c1.getHeight(); // 캐릭터 발 위치 재스캔
 
-					foot = c1.getY() + c1.getHeight(); // 쿠키의 위치
+	               if (foot + fallY >= nowField) { // 발바닥+낙하량 위치가 발판보다 낮다면 낙하량을 조정한다.
+	                 fallY = nowField - foot;
+	               }
+	               c1.setY(c1.getY() + fallY); // Y좌표에 낙하량을 더한다
+	               if (c1.isJump()) { // 떨어지다가 점프를 하면 낙하중지
+	                 break;
+	               }
+	               try {
+	                 Thread.sleep(10);
+	               } catch (InterruptedException e) {
+	                 e.printStackTrace();
+	               }
+	            }
+	            c1.setFall(false);
 
-					// 쿠키가 발판 보다 위에 있다면
-					if (!escKeyOn && foot < nowField // 쿠키가 공중이고
-							&& !c1.isJump() && !c1.isFall()) {
+	            if (downKeyOn ) {  //fall은 계속 실행하기 때문에 downkeyon을 fall에서 한번 더 정의하지 않으면 떨어지면서 downKeyon 누를시에 이미지가 낙하이미지가 바끼지않음
+	               c1.setImage(slideIc.getImage()); // 쿠키 이미지를 슬라이드로 변경
+	            }        
+	            else if (!downKeyOn && !c1.isJump() && !c1.isFall() && c1.getImage() != cookieIc.getImage()) { // 쿠키 이미지가 기본 이미지가 아닐 경우
+	               c1.setImage(cookieIc.getImage());
+	            }
 
-						c1.setFall(true); // 낙하 중으로 전환
-
-						if (c1.getCountJump() == 2) { // 더블점프
-							c1.setImage(fallIc.getImage()); // 낙하 이미지 변경
-						}
-
-						long t1 = Util.getTime(); // 현재시간
-						long t2;
-						int set = 1; // 처음 낙하량 (0~10) 까지 테스트해보자
-
-						while (foot < nowField) { // 공중에 있을 때
-
-							t2 = Util.getTime() - t1; // 현재 시간에서 t1 시간을 뺀다.
-
-							int fallY = set + (int) ((t2) / 40); // 낙하량을 늘린다.
-
-							foot = c1.getY() + c1.getHeight();
-
-							if (foot + fallY >= nowField) { // 발바닥+낙하량 위치가 발판보다 낮다면 낙하량을 조정한다.
-								fallY = nowField - foot;
-							}
-
-							c1.setY(c1.getY() + fallY); // Y좌표에 낙하량을 더한다
-
-							if (c1.isJump()) { // 떨어지다가 점프를 하면 낙하중지
-								break;
-							}
-
-							if (escKeyOn) {
-								long tempT1 = Util.getTime();
-								long tempT2 = 0;
-								while (escKeyOn) {
-									try {
-										Thread.sleep(10);
-									} catch (InterruptedException e) {
-										e.printStackTrace();
-									}
-								}
-								tempT2 = Util.getTime() - tempT1;
-								t1 = t1 + tempT2;
-							}
-
-							try {
-								Thread.sleep(10);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-
-						}
-						c1.setFall(false);
-
-						if (downKeyOn && !c1.isJump() && !c1.isFall() && c1.getImage() != slideIc.getImage()) {
-
-							c1.setImage(slideIc.getImage()); // 쿠키를 슬라이드로 변경
-
-						} else if (!downKeyOn && !c1.isJump() && !c1.isFall() && c1.getImage() != cookieIc.getImage()) { // 쿠키가
-																															// 달리기
-							c1.setImage(cookieIc.getImage());
-						}
-
-						if (!c1.isJump()) {
-							c1.setCountJump(0);
-						}
-					}
-					try {
-						Thread.sleep(10);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}).start();
-	}
-
+	            if (!c1.isJump()) { // 발이 땅에 닿고 점프 중이 아닐 때 더블점프 카운트를 0으로 변경
+	               c1.setCountJump(0);
+	            }
+	          }
+	          try {
+	            Thread.sleep(10);
+	          } catch (InterruptedException e) {
+	            e.printStackTrace();
+	          }
+	        }
+	      }
+	   }).start();
+	 }
 	// 점프 메서드
 	private void jump() {
 		new Thread(new Runnable() {
